@@ -36,4 +36,4 @@ jobs:
           sudo apt-get install git -y
           git clone --mirror https://github.com/cursoawsbog/cloud.git repo
           cd repo
-          git push --mirror https://abejaranor:srobmowrybsmq7c35xbjl2vtgp3xkv2yry3gmdhjxjeodtibxekq@dev.azure.com/abejaranor/Clonacion%20Repo/_git/cloud.git
+          git push https://ingnicolaslinares: ${{PAT.AZURE_PAT}}@dev.azure.com/ingnicolaslinares/curso/_git/curso
