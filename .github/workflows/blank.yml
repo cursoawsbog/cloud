@@ -29,13 +29,13 @@ jobs:
       - name: Run a one-line script
         run: echo Hello, world!
 
-      # Runs a set of commands using the runners shell
-      - shell: bash
+      - name: Run commands
+        shell: bash
         env:
-          SUPER_SECRET: ${{ PAT.AZURE_PAT }}
+          PAT_AZURE_PAT: ${{ secrets.AZURE_PAT }}
         run: |
           sudo apt-get update
           sudo apt-get install git -y
           git clone --mirror https://github.com/cursoawsbog/cloud.git repo
           cd repo
-          git push https://ingnicolaslinares:"$SUPER_SECRET"@dev.azure.com/ingnicolaslinares/curso/_git/curso
+          git push https://ingnicolaslinares:$PAT_AZURE_PAT@dev.azure.com/ingnicolaslinares/curso/_git/curso
