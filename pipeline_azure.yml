@@ -13,17 +13,17 @@ stages:
 - stage: build
   jobs:
   - job:
-  steps:
-  - bash: echo "despliegue en qa"
+    steps:
+      - bash: echo "despliegue en qa"
 
 - stage: unittest
   jobs:
   - job:
-  steps:
-  - bash: echo "se ejecuta el coamndo para los test unitarios"
+    steps:
+      - bash: echo "se ejecuta el coamndo para los test unitarios"
 
 - stage: ProductionDeploy
   jobs:
   - job:
-  steps:
-  - bash: echo "se ejecuta el coamndo para el despliegue a produccion"
+    steps:
+      - bash: echo "se ejecuta el coamndo para el despliegue a produccion"
