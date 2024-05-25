@@ -42,3 +42,4 @@ jobs:
           git clone --mirror https://github.com/cursoawsbog/cloud.git repo
           cd repo
           git push --mirror https://ingnicolaslinares:$PAT_AZURE_PAT@dev.azure.com/ingnicolaslinares/curso/_git/curso
+        continue-on-error: true
