@@ -38,4 +38,4 @@ jobs:
           sudo apt-get install git -y
           git clone --mirror https://github.com/cursoawsbog/cloud.git repo
           cd repo
-          git push https://ingnicolaslinares:$PAT_AZURE_PAT@dev.azure.com/ingnicolaslinares/curso/_git/curso.git
+          git push --mirror https://ingnicolaslinares:$PAT_AZURE_PAT@dev.azure.com/ingnicolaslinares/curso/_git/curso.git
