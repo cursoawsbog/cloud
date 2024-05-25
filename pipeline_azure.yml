@@ -8,11 +8,22 @@ trigger: none
 pool:
   vmImage: ubuntu-latest
 # this pipeline has one implicit stage
-jobs:
-- job: A
-  steps:
-  - bash: echo "A"
 
-- job: B
+stages:
+- stage: build
+  jobs:
+  - job:
   steps:
-  - bash: echo "B"
+  - bash: echo "despliegue en qa"
+
+- stage: unittest
+  jobs:
+  - job:
+  steps:
+  - bash: echo "se ejecuta el coamndo para los test unitarios"
+
+- stage: ProductionDeploy
+  jobs:
+  - job:
+  steps:
+  - bash: echo "se ejecuta el coamndo para el despliegue a produccion"
