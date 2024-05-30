@@ -5,3 +5,6 @@ RUN apt-get install -y curl
 RUN apt-get install -y git 
 RUN apt-get install -y zip 
 RUN pip install pandas
+RUN apt-get install npm
+RUN apt-get install -y nodejs npm
+RUN npm install -g aws-cdk
