@@ -15,8 +15,8 @@ RUN apt-get update \
 RUN curl -sL https://deb.nodesource.com/setup_14.x | bash - \
     && apt-get install -y nodejs
 
-# Instala pandas usando pip
-RUN pip install pandas
+# Instala pandas y aws-cdk-lib usando pip
+RUN pip install pandas aws-cdk-lib
 
 # Instala AWS CDK usando npm
 RUN npm install -g aws-cdk
