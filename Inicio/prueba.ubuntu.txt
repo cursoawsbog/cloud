@@ -1,1 +1,0 @@
-estoy realizando una prueba en terminal ubuntu con wsl y verificación del los comandos GIT
