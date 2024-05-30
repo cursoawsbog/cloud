@@ -1,0 +1,20 @@
+{
+    "name": "CursoAws",
+    "dockerFile": "Dockerfile", 
+    "customizations": {
+      "vscode": {
+        "extensions": [
+            "dbaeumer.vscode-eslint",
+            "eamodio.gitlens",
+            "esbenp.prettier-vscode",
+            "syler.sass-indented",
+            "stylelint.vscode-stylelint",
+            "rangav.vscode-thunder-client",
+            "ms-python.python"
+        ],
+        "settings": {
+          "extensions.verifySignature": false
+        }
+      }
+    }
+  }
