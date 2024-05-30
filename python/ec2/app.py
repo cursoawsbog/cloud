@@ -1,5 +1,5 @@
 import os.path
-from aws_cdk import core
+
 from aws_cdk.aws_s3_assets import Asset
 
 from aws_cdk import (
