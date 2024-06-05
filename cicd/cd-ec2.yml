@@ -15,6 +15,7 @@ steps:
     inline: |
       pwd
       cd cloud
+      git pull
       cd next-amplified
       npm install
       npm run build
