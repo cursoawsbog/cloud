@@ -1,1 +1,26 @@
-hola mundo
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- script: echo Hello, world!
+  displayName: 'Run a one-line script'
+
+- task: SSH@0
+  inputs:
+    sshEndpoint: 'CursoAWS'
+    runOptions: 'inline'
+    inline: |
+      pwd
+      cd cloud
+      cd next-amplified
+      npm install
+      npm run build
+      pm2 start npm -- start
+      pm2 save
+      pm2 startup
+      sudo systemctl restart nginx
+    readyTimeout: '20000'
+  continueOnError: true

@@ -6,7 +6,7 @@ export default function Home() {
     <main className={styles.main}>
       <div className={styles.description}>
         <p>
-          Curso AWS&nbsp;
+          Curso AWS con deploy desde pipelines&nbsp;
           <code className={styles.code}>src/app/page.tsx</code>
         </p>
         <div>
