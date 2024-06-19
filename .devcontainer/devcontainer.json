@@ -4,13 +4,14 @@
   "customizations": {
       "vscode": {
           "extensions": [
-              "dbaeumer.vscode-eslint",
-              "eamodio.gitlens",
-              "esbenp.prettier-vscode",
-              "syler.sass-indented",
-              "stylelint.vscode-stylelint",
-              "rangav.vscode-thunder-client",
-              "ms-python.python"
+            "dbaeumer.vscode-eslint",
+            "eamodio.gitlens",
+            "esbenp.prettier-vscode",
+            "syler.sass-indented",
+            "stylelint.vscode-stylelint",
+            "rangav.vscode-thunder-client",
+            "ms-python.python",
+            "mikoz.black-py"
           ],
           "settings": {
               "extensions.verifySignature": false,
