@@ -1,9 +1,13 @@
+from os import path
 import os.path
 
 from aws_cdk.aws_s3_assets import Asset
-
+from aws_cdk import Size, Duration
 from aws_cdk import (
     aws_ec2 as ec2,
+    aws_lambda as lb,
+    aws_dynamodb as table,
+    aws_apigateway as api_g,
     aws_iam as iam,
     App, Stack
 )
@@ -108,8 +112,67 @@ class CursoAwsExample(Stack):
             }
             )
 
+class REST_API(Stack):
+
+       def __init__(self, scope: Construct, id: str, **kwargs) -> None:
+        super().__init__(scope, id, **kwargs) 
+                # VPC
+
+        dynamo_table = table.TableV2(
+            self,
+            id="table_aws_class",
+            table_name="table_class_v3",
+            billing=table.Billing.on_demand(),
+            deletion_protection=False,
+            partition_key=table.Attribute(name="id_curso", type=table.AttributeType.STRING),
+        )
+
+        fn = lb.Function(
+                self,
+                id = "MyLambda-v2",
+                runtime=lb.Runtime.PYTHON_3_12,
+                handler="lambda_code.lambda_handler",
+                code=lb.Code.from_asset("./lambda"),
+                ephemeral_storage_size=Size.mebibytes(512),
+                timeout=Duration.seconds(2) 
+        )
+        
+        fn_dynamo = lb.Function(
+                self,
+                id = "MyLambda-put-dynamo",
+                runtime=lb.Runtime.PYTHON_3_12,
+                handler="lambda_dynamo.lambda_handler",
+                code=lb.Code.from_asset("./lambda"),
+                ephemeral_storage_size=Size.mebibytes(512),
+                timeout=Duration.seconds(2)           
+        )
+        
+        dynamo_table.grant_full_access(fn_dynamo)
+
+        ap = api_g.RestApi(self,
+                id="Curso-AWS-API-GW",
+                rest_api_name="API-Curso",
+                )
+        consulta_resource = ap.root.add_resource("consulta")
+        test_resource = ap.root.add_resource("test")
+        # Create a Lambda integration
+        lambda_integration = api_g.LambdaIntegration(fn)
+        lambda_integration_dynamo = api_g.LambdaIntegration(fn_dynamo)
+
+        # Add GET method to the resource with Lambda integration
+        consulta_resource.add_method("GET", lambda_integration)
+        consulta_resource.add_method("POST", lambda_integration_dynamo)
+        test_resource.add_method("GET", lambda_integration_dynamo)
+        test_resource.add_method("POST", lambda_integration_dynamo)
+        #Post 
+        # curl -X POST https://j0hhglu7f1.execute-api.us-west-2.amazonaws.com/prod/consulta \
+        # -H "Content-Type: application/json" \
+        # -d '{"key1": "101", "key2": "Nicolas"}'
+
+
 app = App()
 EC2InstanceStack(app, "ec2-instance")
 CursoAwsExample(app, "ejemplo-vpc-ec2")
+REST_API(app, "mi-primera-api")
 
 app.synth()
