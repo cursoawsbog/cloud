@@ -71,7 +71,7 @@ class CursoAwsExample(Stack):
         vpc = ec2.Vpc(self, 
             id="CDK-curso-aws",
             cidr="192.169.0.0/16",
-            nat_gateways=1,
+            nat_gateways=0,
             subnet_configuration=[
                 ec2.SubnetConfiguration(
                     name="public-curso",
