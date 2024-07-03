@@ -147,7 +147,18 @@ class REST_API(Stack):
                 timeout=Duration.seconds(2)           
         )
         
+        fn_get_item_dynamo = lb.Function(
+                self,
+                id = "MyLambda-get-item-dynamo",
+                runtime=lb.Runtime.PYTHON_3_12,
+                handler="lambda_get_item.lambda_handler",
+                code=lb.Code.from_asset("./lambda"),
+                ephemeral_storage_size=Size.mebibytes(512),
+                timeout=Duration.seconds(2)           
+        )
+        
         dynamo_table.grant_full_access(fn_dynamo)
+        dynamo_table.grant_full_access(fn_get_item_dynamo)
 
         ap = api_g.RestApi(self,
                 id="Curso-AWS-API-GW",
@@ -158,16 +169,22 @@ class REST_API(Stack):
         # Create a Lambda integration
         lambda_integration = api_g.LambdaIntegration(fn)
         lambda_integration_dynamo = api_g.LambdaIntegration(fn_dynamo)
+        lambda_integration_get_dynamo_item = api_g.LambdaIntegration(fn_get_item_dynamo)
 
         # Add GET method to the resource with Lambda integration
-        consulta_resource.add_method("GET", lambda_integration)
-        consulta_resource.add_method("POST", lambda_integration_dynamo)
-        test_resource.add_method("GET", lambda_integration_dynamo)
+        consulta_resource.add_method("GET", lambda_integration_get_dynamo_item)
+        consulta_resource.add_method("POST", lambda_integration_get_dynamo_item)
+        test_resource.add_method("GET", lambda_integration)
         test_resource.add_method("POST", lambda_integration_dynamo)
         #Post 
         # curl -X POST https://j0hhglu7f1.execute-api.us-west-2.amazonaws.com/prod/consulta \
         # -H "Content-Type: application/json" \
         # -d '{"key1": "101", "key2": "Nicolas"}'
+        
+        #Consulta de un usuario con el id_curso
+        # curl -X POST https://se4n9f4nb0.execute-api.us-west-2.amazonaws.com/prod/consulta \
+        # -H "Content-Type: application/json"\
+        # -d '{"key1": "103"}'
 
 
 app = App()
