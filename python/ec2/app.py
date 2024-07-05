@@ -2,9 +2,12 @@ from os import path
 import os.path
 
 from aws_cdk.aws_s3_assets import Asset
-from aws_cdk import Size, Duration
+from aws_cdk import Size, Duration, RemovalPolicy
 from aws_cdk import (
     aws_ec2 as ec2,
+    aws_s3 as s3,
+    aws_cloudfront as cf,
+    aws_cloudfront_origins as origins,
     aws_lambda as lb,
     aws_dynamodb as table,
     aws_apigateway as api_g,
@@ -124,6 +127,7 @@ class REST_API(Stack):
             table_name="table_class_v3",
             billing=table.Billing.on_demand(),
             deletion_protection=False,
+            removal_policy=RemovalPolicy.DESTROY,
             partition_key=table.Attribute(name="id_curso", type=table.AttributeType.STRING),
         )
 
@@ -187,9 +191,99 @@ class REST_API(Stack):
         # -d '{"key1": "103"}'
 
 
+class cloudfront_s3_stack(Stack):
+
+       def __init__(self, scope: Construct, id: str, **kwargs) -> None:
+        super().__init__(scope, id, **kwargs) 
+      
+        bucket = s3.Bucket(
+            self,
+            id = "website-cloudfront-curso-aws",
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            encryption=s3.BucketEncryption.S3_MANAGED, 
+            removal_policy=RemovalPolicy.DESTROY,
+        )
+        
+        source_bucket = bucket
+
+        OAC = cf.CfnOriginAccessControl(
+            self, 
+            id = "CursoAwsMyCfnOriginAccessControl",
+            origin_access_control_config=cf.CfnOriginAccessControl.OriginAccessControlConfigProperty(
+                name="CursoAwsMyCfnOriginAccessControl",
+                origin_access_control_origin_type="s3",
+                signing_behavior="always",
+                signing_protocol="sigv4",
+                description="mi primer OAC origin access control aws class"
+            )
+        )
+        
+
+        
+        distribution = cf.Distribution(
+            self, 
+            id="MyDistribution",
+            default_root_object="index.html",
+            default_behavior=cf.BehaviorOptions(
+                origin=origins.S3Origin(
+                    bucket=source_bucket
+                )
+            )
+        )
+
+        bucket.add_to_resource_policy(
+            iam.PolicyStatement(
+                sid='AllowCloudFrontServicePrincipal',
+                actions=["s3:GetObject","s3:ListBucket","s3:*"],
+                effect=iam.Effect.ALLOW,
+                principals=[
+                    iam.ServicePrincipal("cloudfront.amazonaws.com")
+                ],
+                resources=[
+                    bucket.arn_for_objects("*"),
+                    bucket.bucket_arn,
+                ],
+                conditions={
+                    "StringEquals": {
+                        "AWS:SourceArn": f"arn:aws:cloudfront::637423228695:distribution/{distribution.distribution_id}"
+                    }
+                }
+            )
+        )
+
+        bucket_policy = source_bucket.policy
+        bucket_policy_document = bucket_policy.document
+
+        if isinstance(bucket_policy_document, iam.PolicyDocument):
+            bucket_policy_document_json = bucket_policy_document.to_json()
+            # create an updated policy without the OAI reference
+            bucket_policy_updated_json = {'Version': '2012-10-17', 'Statement': []}
+            for statement in bucket_policy_document_json['Statement']:
+                if 'CanonicalUser' not in statement['Principal']:
+                    bucket_policy_updated_json['Statement'].append(statement)
+
+
+        # apply the updated bucket policy to the bucket
+        bucket_policy_override = source_bucket.node.find_child("Policy").node.default_child
+        bucket_policy_override.add_override('Properties.PolicyDocument', bucket_policy_updated_json)
+
+
+        # remove the created OAI reference (S3 Origin property) for the distribution
+        all_distribution_props = distribution.node.find_all()
+        for child in all_distribution_props:
+            if child.node.id == 'S3Origin':
+                child.node.try_remove_child('Resource')
+
+        # associate the created OAC with the distribution
+        distribution_props = distribution.node.default_child
+        distribution_props.add_override('Properties.DistributionConfig.Origins.0.S3OriginConfig.OriginAccessIdentity', '')
+        distribution_props.add_property_override(
+            "DistributionConfig.Origins.0.OriginAccessControlId",
+            OAC.ref
+        )
+
 app = App()
+cloudfront_s3_stack(app, "cloudfront")
 EC2InstanceStack(app, "ec2-instance")
 CursoAwsExample(app, "ejemplo-vpc-ec2")
 REST_API(app, "mi-primera-api")
-
-app.synth()
