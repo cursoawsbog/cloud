@@ -74,7 +74,7 @@ class CursoAwsExample(Stack):
         vpc = ec2.Vpc(self, 
             id="CDK-curso-aws",
             cidr="192.169.0.0/16",
-            nat_gateways=0,
+            nat_gateways=1,
             subnet_configuration=[
                 ec2.SubnetConfiguration(
                     name="public-curso",
@@ -127,7 +127,6 @@ class REST_API(Stack):
             table_name="table_class_v3",
             billing=table.Billing.on_demand(),
             deletion_protection=False,
-            removal_policy=RemovalPolicy.DESTROY,
             partition_key=table.Attribute(name="id_curso", type=table.AttributeType.STRING),
         )
 
@@ -190,12 +189,21 @@ class REST_API(Stack):
         # -H "Content-Type: application/json"\
         # -d '{"key1": "103"}'
 
-
-class cloudfront_s3_stack(Stack):
+class Cloudfront(Stack):
 
        def __init__(self, scope: Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs) 
-      
+                # VPC
+
+        dynamo_table = table.TableV2(
+            self,
+            id="table_aws_class",
+            table_name="table_class_v3",
+            billing=table.Billing.on_demand(),
+            deletion_protection=False,
+            partition_key=table.Attribute(name="id_curso", type=table.AttributeType.STRING),
+        )
+
         bucket = s3.Bucket(
             self,
             id = "website-cloudfront-curso-aws",
@@ -283,7 +291,10 @@ class cloudfront_s3_stack(Stack):
         )
 
 app = App()
-cloudfront_s3_stack(app, "cloudfront")
 EC2InstanceStack(app, "ec2-instance")
 CursoAwsExample(app, "ejemplo-vpc-ec2")
 REST_API(app, "mi-primera-api")
+Cloudfront(app, "cloudfront")
+
+
+app.synth()
