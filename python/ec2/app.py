@@ -12,6 +12,7 @@ from aws_cdk import (
     aws_dynamodb as table,
     aws_apigateway as api_g,
     aws_iam as iam,
+    aws_wafv2 as waf,
     App, Stack
 )
 
@@ -290,11 +291,91 @@ class Cloudfront(Stack):
             OAC.ref
         )
 
+
+class Waf(Stack):
+       def __init__(self, scope: Construct, id: str, **kwargs) -> None:
+        super().__init__(scope, id, **kwargs) 
+
+        bucket = s3.Bucket(
+            self,
+            id = "website-cloudfront-curso-aws",
+            encryption=s3.BucketEncryption.S3_MANAGED, 
+            removal_policy=RemovalPolicy.DESTROY,
+        )
+
+        cfn_iPSet = waf.CfnIPSet(
+            self,
+            id= "MyIpExampleClass",
+            addresses=["45.238.183.187/32"],
+            #addresses=["190.131.197.10/32","186.29.207.51/32"],
+            scope="CLOUDFRONT",
+            description="test bloqueo de ip Nicolas",
+            name="BlockNicolasIp",
+            ip_address_version="IPV4"
+        )
+        
+        rule = waf.CfnWebACL.RuleProperty(
+            name="BlockNicolasIpRule",
+            priority=101,
+            action=waf.CfnWebACL.RuleActionProperty(
+                block={}
+            ),
+            statement=waf.CfnWebACL.StatementProperty(
+                ip_set_reference_statement=waf.CfnWebACL.IPSetReferenceStatementProperty(
+                    arn=cfn_iPSet.attr_arn
+                )
+            ),
+            visibility_config=waf.CfnWebACL.VisibilityConfigProperty(
+                cloud_watch_metrics_enabled=True,
+                metric_name="BlockNicolasIpRule",
+                sampled_requests_enabled=True
+            )
+        )     
+        
+        acl = waf.CfnWebACL(
+            self,
+            id="MyACL",
+            default_action=waf.CfnWebACL.DefaultActionProperty(
+                allow={}
+            ),
+            scope="CLOUDFRONT",
+            visibility_config=waf.CfnWebACL.VisibilityConfigProperty(
+                cloud_watch_metrics_enabled=False,
+                metric_name="metricName",
+                sampled_requests_enabled=False
+            ),
+            description="test ACL de Nicolas",
+            rules=[rule]
+        )
+
+        distribution = cf.Distribution(
+            self, 
+            id="MyDistribution",
+            default_root_object="index.html",
+            default_behavior=cf.BehaviorOptions(
+                origin=origins.S3Origin(
+                    bucket=bucket
+                )
+            ),
+            web_acl_id=acl.attr_arn,
+        )
+        bucket.add_to_resource_policy(iam.PolicyStatement(
+            actions=["s3:*"],
+            resources=[bucket.arn_for_objects("*")],
+            principals=[iam.ServicePrincipal("cloudfront.amazonaws.com")],
+            conditions={
+                "StringEquals": {
+                    "AWS:SourceArn": f"arn:aws:cloudfront::{self.account}:distribution/{distribution.distribution_id}"
+                }
+            }
+        ))
+            
 app = App()
 EC2InstanceStack(app, "ec2-instance")
 CursoAwsExample(app, "ejemplo-vpc-ec2")
 REST_API(app, "mi-primera-api")
 Cloudfront(app, "cloudfront")
+Waf(app, "waf")
 
 
 app.synth()
