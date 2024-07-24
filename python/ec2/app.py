@@ -1,5 +1,6 @@
 from os import path
 import os.path
+import json
 
 from aws_cdk.aws_s3_assets import Asset
 from aws_cdk import Size, Duration, RemovalPolicy
@@ -13,6 +14,7 @@ from aws_cdk import (
     aws_apigateway as api_g,
     aws_iam as iam,
     aws_wafv2 as waf,
+    aws_secretsmanager as secrets,
     App, Stack
 )
 
@@ -332,6 +334,47 @@ class Waf(Stack):
             )
         )     
         
+        ruleGeoMatch = waf.CfnWebACL.RuleProperty(
+            name     = 'GeoMatch',
+            priority =  0,
+            action   = waf.CfnWebACL.RuleActionProperty(
+                block={} ## To disable, change to *count*
+            ),
+            statement = waf.CfnWebACL.StatementProperty(
+                not_statement = waf.CfnWebACL.NotStatementProperty(
+                statement = waf.CfnWebACL.StatementProperty(
+                    geo_match_statement = waf.CfnWebACL.GeoMatchStatementProperty(
+                    ##
+                    ## block connection if source not in the below country list
+                    ##
+                    country_codes = [
+                        "AR", ## Argentina
+                        "BO", ## Bolivia
+                        "BR", ## Brazil
+                        "CL", ## Chile
+                        "CO", ## Colombia
+                        "EC", ## Ecuador
+                        "FK", ## Falkland Islands
+                        "GF", ## French Guiana
+                        "GY", ## Guiana
+                        "GY", ## Guyana
+                        "PY", ## Paraguay
+                        "PE", ## Peru
+                        "SR", ## Suriname
+                        "UY", ## Uruguay
+                        "VE", ## Venezuela
+                    ] ## country_codes
+                    ) ## geo_match_statement
+                ) ## statement
+                ) ## not_statement
+            ), ## statement
+            visibility_config = waf.CfnWebACL.VisibilityConfigProperty(
+                cloud_watch_metrics_enabled = True,
+                metric_name                 = 'GeoMatch',
+                sampled_requests_enabled    = True
+            ) ## visibility_config
+        ) ## GeoMatch
+
         acl = waf.CfnWebACL(
             self,
             id="MyACL",
@@ -345,7 +388,7 @@ class Waf(Stack):
                 sampled_requests_enabled=False
             ),
             description="test ACL de Nicolas",
-            rules=[rule]
+            rules=[rule, ruleGeoMatch]
         )
 
         distribution = cf.Distribution(
@@ -369,13 +412,52 @@ class Waf(Stack):
                 }
             }
         ))
-            
+
+class Environment_Variables(Stack):
+       def __init__(self, scope: Construct, id: str, **kwargs) -> None:
+        super().__init__(scope, id, **kwargs) 
+        
+        user = "Edwin12"
+        access_key = "123456789"
+         
+        secreto_edwin = secrets.Secret(
+            self,
+            id= "Secreto de Edwin",
+            description= "CDK deploy secret from Edwin",
+            generate_secret_string=secrets.SecretStringGenerator(
+                    secret_string_template=json.dumps({"username": "Edwin12"}),
+                    generate_string_key="password",
+                    exclude_characters="/@\"",
+                    exclude_lowercase=True,
+                    exclude_punctuation=True,
+                    exclude_numbers=True
+                )
+        )
+        
+        secreto_paula =secrets.Secret(
+            self,
+            id= "secreto de Paula",
+            description= "CDK deploy secret from Paula",
+            generate_secret_string=secrets.SecretStringGenerator(
+                    secret_string_template=json.dumps({"username": "Paula12"}),
+                    generate_string_key="password",
+                    exclude_characters="/@\""
+                )
+        )
+        
+        variable = secreto_paula.secret_name
+        secreto = secreto_paula.secret_value
+        print(variable)
+        print(secreto)
+        
+                  
 app = App()
 EC2InstanceStack(app, "ec2-instance")
 CursoAwsExample(app, "ejemplo-vpc-ec2")
 REST_API(app, "mi-primera-api")
 Cloudfront(app, "cloudfront")
 Waf(app, "waf")
+Environment_Variables (app, "env-var")
 
 
 app.synth()
